@@ -1,11 +1,14 @@
 <script setup>
-import { onMounted } from "vue";
+import { ref, onMounted } from "vue";
 import L from "leaflet";
-
 const surveyStore = useSurveyStore();
 const latitude = 0.139267;
 const longitude = 117.494326;
 const zoomLevel = 16;
+
+const totalPolygons = ref(0); // Total bidang dalam GeoJSON
+const surveyedCount = ref(0); // Bidang yang sudah disurvei
+const progress = ref(0); // Persentase progress
 
 onMounted(async () => {
   // Inisialisasi peta
@@ -19,7 +22,7 @@ onMounted(async () => {
     }
   ).addTo(map);
 
-  // Custom Basemap AWS
+  // AWS Tiles sebagai overlay
   const awsTiles = L.tileLayer(
     "https://basemap-ortho.s3.ap-southeast-2.amazonaws.com/bontang-ortho-tiles/{z}/{x}/{y}.png",
     {
@@ -35,11 +38,19 @@ onMounted(async () => {
   );
   const bidangBontangBaru = await geoJsonBontangBaru.json();
 
+  totalPolygons.value = bidangBontangBaru.features.length; // Simpan total bidang tanah
+
   if (surveyStore.bidang_bontang_baru.length === 0) {
     await surveyStore.getAllDoneBidangTanah();
   }
 
-  // Fungsi Style
+  // Hitung jumlah bidang yang sudah disurvei
+  surveyedCount.value = surveyStore.bidang_bontang_baru.filter(
+    (item) => item.status === true
+  ).length;
+  progress.value = (surveyedCount.value / totalPolygons.value) * 100; // Kalkulasi progress
+
+  // Fungsi Style GeoJSON
   const getStyle = (feature) => {
     const fid = feature?.properties?.FID;
     const isSurveyed = surveyStore.bidang_bontang_baru.some(
@@ -79,19 +90,16 @@ onMounted(async () => {
     });
   };
 
-  // Tambahkan GeoJSON
+  // Tambahkan GeoJSON ke peta
   const geoJsonLayer = L.geoJSON(bidangBontangBaru, {
     style: getStyle,
     onEachFeature: onEachFeature,
   }).addTo(map);
 
   // Layer Control
-  const baseMaps = {
-    OpenStreetMap: osm,
-  };
-
+  const baseMaps = { OpenStreetMap: osm };
   const overlayMaps = {
-    "Ortho Bontang": awsTiles,
+    "AWS Tiles": awsTiles,
     "Bidang Bontang Baru": geoJsonLayer,
   };
 
@@ -100,12 +108,68 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div id="map" class="h-screen w-full"></div>
+  <div class="map-container">
+    <!-- Peta -->
+    <div id="map" class="map"></div>
+
+    <div class="progress-container">
+      <div class="text-left mb-2">
+        <p class="text-lg font-semibold">Progres Bontang Baru</p>
+        <p class="">
+          Selesai {{ surveyedCount }} dari
+          {{ totalPolygons }}
+        </p>
+      </div>
+      <v-progress-circular
+        :model-value="progress"
+        :size="140"
+        :width="20"
+        color="success"
+      >
+        {{ Math.round(progress) }}%
+      </v-progress-circular>
+    </div>
+  </div>
 </template>
 
 <style scoped>
-#map {
+.map-container {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+}
+
+.map {
   height: 100%;
   width: 100%;
+}
+
+.progress-circle {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  padding: 5px;
+  z-index: 999;
+}
+
+.progress-container {
+  z-index: 999;
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 10px;
+  padding: 10px;
+  text-align: center;
+  box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.progress-title {
+  font-size: 14px;
+  font-weight: bold;
+  margin-bottom: 5px;
+  color: #333;
 }
 </style>
