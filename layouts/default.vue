@@ -26,14 +26,14 @@
     <v-main class="bg-gray">
       <slot />
     </v-main>
-    <v-navigation-drawer
+    <!-- <v-navigation-drawer
       expand-on-hover
       rail
       v-if="isPersil()"
       location="right"
     >
       <AppSidebarTools />
-    </v-navigation-drawer>
+    </v-navigation-drawer> -->
   </v-layout>
 </template>
 <script lang="ts" setup>

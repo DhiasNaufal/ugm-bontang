@@ -1,46 +1,26 @@
-<template>
-  <div class="relative h-screen w-full">
-    <!-- Map Container -->
-    <div id="petaKerjaMap" class="h-full w-full z-0 pointer-events-auto"></div>
-
-    <div class="absolute bottom-4 right-4 p-4 z-10 pointer-events-auto">
-      <DashboardPjProgressCardSurverPbb
-        class="w-[calc(100vw-70px)] md:w-[300px]"
-      />
-    </div>
-  </div>
-</template>
 <script setup>
 import { onMounted } from "vue";
 import L from "leaflet";
-const latitude = 0.155452;
-const longitude = 117.475476;
-const zoomLevel = 15;
-const osm = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
-async function addGeoJson(url, map, style) {
-  await fetch(url)
-    .then((response) => response.json())
-    .then((data) => {
-      L.geoJSON(data, style).addTo(map);
-    });
-}
-// const geoJsonFiles = ["peta_kerja_1", "peta_kerja_2", "peta_kerja_3"];
+
+const surveyStore = useSurveyStore();
+const latitude = 0.139267;
+const longitude = 117.494326;
+const zoomLevel = 16;
+
 onMounted(async () => {
-  const mapElement = document.getElementById("petaKerjaMap");
-  if (!mapElement) {
-    console.error("Elemen map tidak ditemukan");
-    return;
-  }
+  // Inisialisasi peta
+  const map = L.map("map").setView([latitude, longitude], zoomLevel);
 
-  const map = L.map("petaKerjaMap").setView([latitude, longitude], zoomLevel);
-  addGeoJson("/petaKerja/peta_kerja_bontang_baru.geojson", map, {
-    style: (feature) => ({ fillColor: "rgba(0, 0, 0, 0)", color: "yellow" }),
-  });
-  L.tileLayer(osm, {
-    maxZoom: 18,
-  }).addTo(map);
+  // Basemap OSM
+  const osm = L.tileLayer(
+    "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    {
+      attribution: "&copy; OpenStreetMap contributors",
+    }
+  ).addTo(map);
 
-  L.tileLayer(
+  // Custom Basemap AWS
+  const awsTiles = L.tileLayer(
     "https://basemap-ortho.s3.ap-southeast-2.amazonaws.com/bontang-ortho-tiles/{z}/{x}/{y}.png",
     {
       tms: true,
@@ -48,18 +28,84 @@ onMounted(async () => {
       maxZoom: 19,
     }
   ).addTo(map);
-  addGeoJson("/new_bontang.geojson", map, {
-    style: (feature) => ({ fillColor: "rgba(0, 0, 0, 0)", color: "yellow" }),
-  });
-  geoJsonFiles.forEach((blok) => {
-    addGeoJson(`/petaKerja/${blok}.geojson`, map, {
-      style: (feature) => ({
-        fillColor: "rgba(139, 146, 152, 1)",
-        fillOpacity: 0.5,
-        weight: 0.9,
-        color: "white",
-      }),
+
+  // Fetch Data GeoJSON
+  const geoJsonBontangBaru = await fetch(
+    "/petaKerja/peta_kerja_bontang_baru.geojson"
+  );
+  const bidangBontangBaru = await geoJsonBontangBaru.json();
+
+  if (surveyStore.bidang_bontang_baru.length === 0) {
+    await surveyStore.getAllDoneBidangTanah();
+  }
+
+  // Fungsi Style
+  const getStyle = (feature) => {
+    const fid = feature?.properties?.FID;
+    const isSurveyed = surveyStore.bidang_bontang_baru.some(
+      (item) => item.FID === String(fid) && item.status === true
+    );
+    return {
+      fillColor: isSurveyed ? "green" : "rgba(139, 146, 152, 1)",
+      weight: 1,
+      color: "white",
+      fillOpacity: isSurveyed ? 1 : 0.5,
+    };
+  };
+
+  // Event GeoJSON
+  const onEachFeature = (feature, layer) => {
+    const fid = feature?.properties?.FID;
+    const isSurveyed = surveyStore.bidang_bontang_baru.some(
+      (item) => item.FID === String(fid) && item.status === true
+    );
+    layer.bindPopup(`
+      <div style="font-family: Arial, sans-serif; max-width: 300px;">
+        <p><strong>Kecamatan:</strong> ${feature.properties.KECAMATAN}</p>
+        <p><strong>Kelurahan:</strong> ${feature.properties.KELURAHAN}</p>
+        <p><strong>Alamat OP:</strong> ${feature.properties.ALAMAT_OP}</p>
+        <p><strong>Alamat WP:</strong> ${feature.properties.ALAMAT_WP}</p>
+        <p><strong>Status:</strong> ${
+          isSurveyed
+            ? "<span style='color: green;'>Sudah Disurvey</span>"
+            : "<span style='color: red;'>Belum Disurvey</span>"
+        }</p>
+      </div>
+    `);
+
+    layer.on({
+      mouseover: (e) => e.target.setStyle({ weight: 5, color: "yellow" }),
+      mouseout: (e) => e.target.setStyle({ weight: 1, color: "white" }),
     });
-  });
+  };
+
+  // Tambahkan GeoJSON
+  const geoJsonLayer = L.geoJSON(bidangBontangBaru, {
+    style: getStyle,
+    onEachFeature: onEachFeature,
+  }).addTo(map);
+
+  // Layer Control
+  const baseMaps = {
+    OpenStreetMap: osm,
+  };
+
+  const overlayMaps = {
+    "Ortho Bontang": awsTiles,
+    "Bidang Bontang Baru": geoJsonLayer,
+  };
+
+  L.control.layers(baseMaps, overlayMaps, { collapsed: false }).addTo(map);
 });
 </script>
+
+<template>
+  <div id="map" class="h-screen w-full"></div>
+</template>
+
+<style scoped>
+#map {
+  height: 100%;
+  width: 100%;
+}
+</style>

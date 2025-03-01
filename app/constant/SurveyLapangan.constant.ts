@@ -4,6 +4,6 @@ export default {
     { title: "ID", value: "ID" },
     { title: "Nama Kelurahan", value: "KELURAHAN" },
     { title: "Nama Kecamatan", value: "KECAMATAN" },
-    { title: "Status", value: "status" },
+    { title: "Status", value: "status", sortable: true },
   ],
 };
