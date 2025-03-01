@@ -2,14 +2,24 @@
   <v-container>
     <v-row no-gutters class="items-center gap-4">
       <AppTextH5 color="primary"> Update Status Survey</AppTextH5>
-      <v-btn
-        class="text-none mx-2"
-        variant="outlined"
-        color="green"
-        :disabled="updateItem.length == 0"
-        @click="updateDialog = true"
-        >Update</v-btn
-      >
+      <div class="flex gap-2">
+        <v-btn
+          class="text-none"
+          variant="outlined"
+          color="green"
+          :disabled="updateItem.length == 0"
+          @click="updateDialog = true"
+          >Update</v-btn
+        >
+        <v-btn
+          class="text-none"
+          variant="outlined"
+          color="error"
+          :disabled="updateItem.length == 0"
+          @click="undoDialog = true"
+          >Undo</v-btn
+        >
+      </div>
       <v-spacer></v-spacer>
       <v-col lg="3"
         ><AppInputAutocomplete
@@ -78,6 +88,26 @@
       </v-card-actions>
     </v-card-text>
   </AppDialog>
+  <AppDialog v-model="undoDialog" title="Undo Status Bidang" width="500">
+    <v-card-text>
+      Pastikan data yang akan ubah sudah benar
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <AppButton
+          label="Cancel"
+          color="info"
+          variant="outlined"
+          @click="undoDialog = false"
+        />
+        <AppButton
+          form="presensiForm"
+          label="Undo"
+          color="error"
+          @click="updatePersil(false)"
+        />
+      </v-card-actions>
+    </v-card-text>
+  </AppDialog>
 </template>
 <script lang="ts" setup>
 import { AppInputAutocomplete } from "#components";
@@ -104,6 +134,7 @@ const filterByStatus = (value: any) => {
 const updateItem = ref([]);
 const search = ref("");
 const updateDialog = ref(false);
+const undoDialog = ref(false);
 const statusFilter = ref(null);
 const updatePersil = async (status: boolean) => {
   const payload = updateItem.value.map((item: any) => {
@@ -118,7 +149,6 @@ const updatePersil = async (status: boolean) => {
       date_created: tanggalIndoNowLengkap(),
     };
   });
-  console.log(payload);
   await surveyStore.bulkUpdate(
     "surveyBidangTanah",
     payload,
@@ -126,6 +156,7 @@ const updatePersil = async (status: boolean) => {
   );
   updateItem.value = [];
   updateDialog.value = false;
+  undoDialog.value = false;
   surveyStore.getAllDoneBidangTanah();
 };
 
@@ -137,8 +168,8 @@ const filteredItems = computed(() => {
 });
 surveyStore.getAllDoneBidangTanah();
 const isPersilDone = (id: any) => {
-  return surveyStore.bidang_bontang_baru.some(
-    (item: any) => Number(item.FID) === id && item.status === true
-  );
+  return surveyStore.bidang_bontang_baru.some((item: any) => {
+    return item.FID === String(id) && item.status === true;
+  });
 };
 </script>

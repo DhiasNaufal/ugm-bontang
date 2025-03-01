@@ -47,7 +47,7 @@ export const useSurveyStore = defineStore("survey", () => {
       bindagTanahData.push({ ...doc.data() });
     });
     bidang_bontang_baru.value = bindagTanahData;
-    console.log(bindagTanahData);
+    // console.log(bindagTanahData);
   };
 
   // Write status
