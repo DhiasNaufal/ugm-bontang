@@ -65,65 +65,20 @@
 </template>
 <script lang="ts" setup>
 import SurveyLapanganConstant from "~/app/constant/SurveyLapangan.constant";
+const surveyStore = useSurveyStore();
 const items = ref([]);
-async function addGeoJson(url: string) {
-  try {
-    const response = await fetch(url);
-    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-
-    const geoJson = await response.json();
-
-    if (!geoJson.features || !Array.isArray(geoJson.features)) {
-      throw new Error("Invalid GeoJSON format: Missing 'features' array");
-    }
-
-    const tableData = geoJson.features.map(
-      (feature: any) => feature.properties
-    );
-    return tableData;
-  } catch (error) {
-    console.error("Error fetching GeoJSON:", error);
-    return [];
-  }
-}
 onMounted(async () => {
-  items.value = await addGeoJson("/petaKerja/peta_kerja_bontang_baru.geojson");
+  const properties = await addGeoJsonProperties(
+    "/petaKerja/peta_kerja_bontang_baru.geojson"
+  );
+  items.value = properties;
+  console.log(properties.length);
+  surveyStore.totalObject.bontang_baru == properties.length;
 });
 const updateItem = ref([]);
 const search = ref("");
 const updateDialog = ref(false);
-import {
-  getFirestore,
-  writeBatch,
-  doc,
-  collection,
-  getDocs,
-  collectionGroup,
-  query,
-  where,
-} from "firebase/firestore";
-const db = getFirestore();
-const appStore = useAppStore();
-const bulkUpdate = async (collectionName: any, updates: any) => {
-  const batch = writeBatch(db);
-  updates.forEach((item: any) => {
-    if (!item.FID) return;
-    const parentDocRef = doc(db, collectionName, tanggalIndoNow());
-    const subCollectionRef = collection(
-      parentDocRef,
-      "survey_bidang_bontang_baru"
-    );
-    const subDocRef = doc(subCollectionRef, `FID_${item.FID.toString()}`);
-    batch.set(subDocRef, item);
-  });
 
-  try {
-    await batch.commit();
-    appStore.toastSuccess("Batch update berhasil!");
-  } catch (error: any) {
-    appStore.toastError(error);
-  }
-};
 const updatePersil = async (status: boolean) => {
   const payload = updateItem.value.map((item: any) => {
     return {
@@ -138,10 +93,14 @@ const updatePersil = async (status: boolean) => {
     };
   });
   console.log(payload);
-  await bulkUpdate("surveyBidangTanah", payload);
+  await surveyStore.bulkUpdate(
+    "surveyBidangTanah",
+    payload,
+    "survey_bidang_bontang_baru"
+  );
   updateItem.value = [];
   updateDialog.value = false;
-  getAllDoneBidangTanah();
+  surveyStore.getAllDoneBidangTanah();
 };
 
 const filteredItems = computed(() => {
@@ -150,23 +109,9 @@ const filteredItems = computed(() => {
     item.FID.toString().includes(search.value.toLowerCase())
   );
 });
-const doneBidangTanah = ref([]);
-const bidangTanahQuery = query(
-  collectionGroup(db, "survey_bidang_bontang_baru"),
-  where("status", "==", true)
-);
-const getAllDoneBidangTanah = async () => {
-  const employeeSnapshot = await getDocs(bidangTanahQuery);
-  let bindagTanahData: any = [];
-  employeeSnapshot.forEach((doc) => {
-    bindagTanahData.push({ ...doc.data() });
-  });
-  doneBidangTanah.value = bindagTanahData;
-  console.log(bindagTanahData);
-};
-getAllDoneBidangTanah();
+surveyStore.getAllDoneBidangTanah();
 const isPersilDone = (id: any) => {
-  return doneBidangTanah.value.some(
+  return surveyStore.bidang_bontang_baru.some(
     (item: any) => Number(item.FID) === id && item.status === true
   );
 };
