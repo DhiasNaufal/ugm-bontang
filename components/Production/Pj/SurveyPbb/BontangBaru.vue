@@ -11,6 +11,19 @@
         >Update</v-btn
       >
       <v-spacer></v-spacer>
+      <v-col lg="3"
+        ><AppInputAutocomplete
+          v-model="statusFilter"
+          @update:model-value="filterByStatus"
+          label="Status"
+          is-filter
+          :items="[
+            { title: 'Sudah disurvey', value: true },
+            { title: 'Belum disurvey', value: false },
+          ]"
+          hide-details
+        />
+      </v-col>
       <v-col lg="3">
         <v-text-field
           v-model="search"
@@ -36,7 +49,10 @@
       return-object
     >
       <template #item.status="{ item }: any">
-        <v-chip :color="isPersilDone(item.FID) ? 'success' : 'error'">
+        <v-chip v-if="statusFilter" :color="item.status ? 'success' : 'error'">
+          {{ item.status ? "DONE" : "Not Done" }}
+        </v-chip>
+        <v-chip v-else :color="isPersilDone(item.FID) ? 'success' : 'error'">
           {{ isPersilDone(item.FID) ? "DONE" : "Not Done" }}
         </v-chip>
       </template>
@@ -64,21 +80,31 @@
   </AppDialog>
 </template>
 <script lang="ts" setup>
+import { AppInputAutocomplete } from "#components";
 import SurveyLapanganConstant from "~/app/constant/SurveyLapangan.constant";
 const surveyStore = useSurveyStore();
 const items = ref([]);
+const propertiesData = ref([]);
 onMounted(async () => {
   const properties = await addGeoJsonProperties(
     "/petaKerja/peta_kerja_bontang_baru.geojson"
   );
+  propertiesData.value = properties;
   items.value = properties;
   console.log(properties.length);
   surveyStore.totalObject.bontang_baru == properties.length;
 });
+const filterByStatus = (value: any) => {
+  if (value) {
+    items.value = surveyStore.bidang_bontang_baru;
+  } else {
+    items.value = propertiesData.value;
+  }
+};
 const updateItem = ref([]);
 const search = ref("");
 const updateDialog = ref(false);
-
+const statusFilter = ref(null);
 const updatePersil = async (status: boolean) => {
   const payload = updateItem.value.map((item: any) => {
     return {
