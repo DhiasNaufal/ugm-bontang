@@ -54,12 +54,13 @@ export const useSurveyStore = defineStore("survey", () => {
   const bulkUpdate = async (
     collectionName: any,
     updates: any,
-    nama_survey: string
+    nama_survey: string,
+    dokumen_kelurahan: string
   ) => {
     const batch = writeBatch(db);
     updates.forEach((item: any) => {
       if (!item.FID) return;
-      const parentDocRef = doc(db, collectionName, tanggalIndoNow());
+      const parentDocRef = doc(db, collectionName, dokumen_kelurahan);
       const subCollectionRef = collection(parentDocRef, nama_survey);
       const subDocRef = doc(subCollectionRef, `FID_${item.FID.toString()}`);
       batch.set(subDocRef, item);

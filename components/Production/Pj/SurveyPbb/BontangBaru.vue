@@ -152,12 +152,14 @@ const updatePersil = async (status: boolean) => {
   await surveyStore.bulkUpdate(
     "surveyBidangTanah",
     payload,
-    "survey_bidang_bontang_baru"
+    "survey_bidang_bontang_baru",
+    "bontang_baru"
   );
   updateItem.value = [];
   updateDialog.value = false;
   undoDialog.value = false;
-  surveyStore.getAllDoneBidangTanah();
+  await surveyStore.getAllDoneBidangTanah();
+  filterByStatus(statusFilter.value);
 };
 
 const filteredItems = computed(() => {
