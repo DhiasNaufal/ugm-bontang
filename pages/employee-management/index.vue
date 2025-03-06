@@ -1,3 +1,4 @@
 <template>
-  <ManagementEmployee />
+  <!-- <ManagementEmployee /> -->
+  <ManagementTabs />
 </template>

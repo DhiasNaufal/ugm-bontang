@@ -35,6 +35,7 @@ export default {
     { title: "Action", value: "action", width: "200px", align: "center" },
   ],
   employeeStatusHeader: [
+    { title: "Tanggal", value: "tanggal", width: "200px" },
     { title: "Nama", value: "user_name", width: "200px" },
     {
       title: "Status Kehadiran",
