@@ -48,6 +48,10 @@
       </v-data-table>
     </v-container>
   </div>
+  <AppDialogPresensiDetail
+    v-model="presensiDetail"
+    :selected-employee="selectedItem"
+  />
 </template>
 <script setup lang="ts">
 const dateFilter = ref(tanggalIndoNow());
@@ -69,7 +73,6 @@ const getAllEmployee = async () => {
   employeeSnapshot.forEach((doc) => {
     employeeData.push({ ...doc.data() });
   });
-  console.log(employeeData);
   employeePresence.value = employeeData;
 };
 getAllEmployee();
