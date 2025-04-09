@@ -11,6 +11,9 @@
             ? authStore.user?.displayName
             : authStore.user?.email
         }}
+        <span v-if="authStore.user?.email == 'annisa.rizky.kusuma04@gmail.com'"
+          >😎</span
+        >
       </span>
     </template>
     <template #subtitle>
