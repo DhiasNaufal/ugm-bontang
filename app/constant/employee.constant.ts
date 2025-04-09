@@ -41,7 +41,7 @@ export default {
     },
     { title: "Jam Kerja", value: "jam_kerja", minWidth: "200" },
     { title: "Jam Lembur", value: "jam_lembur", minWidth: "200" },
-    { title: "Keterangan", value: "keterangan", minminWidth: "200" },
-    { title: "Actions", value: "action", minminWidth: "200" },
+    { title: "Keterangan", value: "keterangan", minWidth: "200" },
+    { title: "Actions", value: "action", minWidth: "200" },
   ],
 };
