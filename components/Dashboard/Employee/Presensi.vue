@@ -94,10 +94,16 @@
       </v-card-actions>
     </v-form>
   </AppDialog>
-  <AppDialog v-model="checkOutDialog" width="400">
+  <AppDialog v-model="checkOutDialog" width="400" title="Check out">
     <v-card-text>
       <p class="text-text">
-        Setelah Check Out anda Tidak Bisa Malukan Check in lagi untuk Hari ini
+        <span v-if="authStore.user?.email == 'annisa.rizky.kusuma04@gmail.com'">
+          Terima Kasih sudah mengerjakan hari ini! Hati hati di jalan 😉
+        </span>
+        <span v-else>
+          Setelah Check Out anda Tidak Bisa Malakukan Check in lagi untuk hari
+          ini
+        </span>
       </p>
     </v-card-text>
     <v-card-actions>
